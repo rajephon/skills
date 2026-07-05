@@ -1,0 +1,26 @@
+{
+  "skill_name": "codex-delegate",
+  "evals": [
+    {
+      "id": 0,
+      "name": "single-delegation",
+      "prompt": "방금 플래닝을 끝냈어. 아래 계획대로 codex에게 위탁해서 구현해줘.\n\n대상 저장소: <PROJECT_DIR> (Node.js ESM, 테스트: npm test)\n\n계획:\n1. src/slugify.js 추가 — export function slugify(str): 소문자화, 앞뒤 공백 제거, 영숫자·하이픈 외 문자 제거, 공백(연속 포함)은 하이픈 1개로, 연속 하이픈은 1개로 축약\n2. tests/slugify.test.js 추가 — 일반 문장, 특수문자 포함, 연속 공백, 빈 문자열 케이스\n3. 기존 코드는 수정하지 말 것",
+      "expected_output": "codex exec가 reasoning effort high로 실행되고, slugify가 계획대로 구현되며, Claude가 diff 리뷰와 npm test를 직접 실행해 검증한 보고를 남긴다.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "parallel-orchestration",
+      "prompt": "플래닝 끝났고, 이제 구현은 codex한테 맡기고 싶어. 분업이 더 효율적이라고 판단되면 여러 codex 에이전트로 나눠서 진행해줘.\n\n대상 저장소: <PROJECT_DIR> (Node.js ESM, 테스트: npm test)\n\n계획:\n[작업 A] src/stats.js — export function mean(numbers), median(numbers). 빈 배열이면 TypeError를 던진다. tests/stats.test.js 작성.\n[작업 B] src/format.js — export function formatBytes(n) (B/KB/MB/GB 단위, 소수 1자리), formatDuration(ms) (\"1m 30s\" 형식). tests/format.test.js 작성.\n\n두 작업은 서로 독립적이고 기존 코드는 건드리지 않는다.",
+      "expected_output": "독립성을 근거로 병렬을 선택하고, git worktree 2개에서 codex 에이전트 2개를 동시에 실행한 뒤 브랜치를 병합하고 전체 테스트를 재실행한다.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "dependency-judgment",
+      "prompt": "아래 두 작업을 codex에 위탁하려고 해. 병렬로 나누는 게 나을지 판단해서 진행해줘.\n\n대상 저장소: <PROJECT_DIR> (Node.js ESM, 테스트: npm test)\n\n계획:\n[작업 A] src/validate.js — export function validateEmail(s), validateUrl(s) (boolean 반환). tests/validate.test.js 작성.\n[작업 B] src/form.js — export function validateSignupForm(form): validate.js의 validateEmail을 사용해 {email, username} 객체를 검증하고 {valid, errors[]}를 반환. tests/form.test.js 작성.\n\n작업 B는 작업 A의 결과물에 의존한다.",
+      "expected_output": "B가 A에 의존하므로 병렬 대신 단독(또는 순차) 위탁을 선택하고 그 근거를 설명한 뒤, 하나의 codex 위탁으로 두 작업을 완수한다.",
+      "files": []
+    }
+  ]
+}
