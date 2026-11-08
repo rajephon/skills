@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- EDIT: 2–4단어짜리 이름. "주제: 설명" 형태 금지 -->
+<title>페이지 이름</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- EDIT: 언어·주제에 맞는 글꼴. 한국어 기본 조합 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* layout: 상단 고정 섹션 탭 + 한 열짜리 노트. 블록마다 질문 → 뼈대 → 그림 → 접힌 상세 → 꼬리질문 */
+:root {
+  /* EDIT: 강조색과 중성색은 주제에 맞게. 중성색은 강조색 쪽으로 살짝 기울인다 */
+  --bg: #f7f8f3;
+  --surface: #ffffff;
+  --ink: #1a1d14;
+  --ink-2: #474d3c;
+  --muted: #6e7463; /* --bg 대비 4.5:1 이상. 작은 글씨(캡션·eyebrow·표 머리)에 쓰이므로 더 밝히지 않는다 */
+  --line: #e0e3d6;
+  --line-strong: #b9bdac;
+  --accent: #4b6812;
+  --accent-ink: #ffffff;
+  --accent-soft: #ebf1d8;
+  --todo: #b3261e;
+  --todo-soft: #fdecea;
+  /* 차트 계열색: 라이트 #ffffff / 다크 #1a1c16 바탕에서 CVD·대비 검증 완료. 바꾸면 dataviz 검증기로 다시 확인 */
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  /* 계열색 칸 안 글자: s1 위에서만 이 색, s2–s5 위에서는 늘 진한 글자(#0b0b0b) */
+  --on-s1: #ffffff;
+  --grid: #e8e9e2; --axis: #c3c2b7;
+  /* 상태색: 상태 표시 전용(아이콘·라벨과 함께). 계열색으로 쓰지 않는다 */
+  --good: #0ca30c; --crit: #d03b3b;
+  --f-display: "Hahmlet", "Nanum Myeongjo", "AppleMyungjo", serif;
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101209; --surface: #1a1c16; --ink: #eceee4; --ink-2: #c3c8b5; --muted: #8e9381;
+    --line: #2d3125; --line-strong: #4a4f40; --accent: #a9c35e; --accent-ink: #141a06; --accent-soft: #252d14;
+    --todo: #ff9186; --todo-soft: #3a1d1a;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --on-s1: #0b0b0b;
+    --grid: #2a2d24; --axis: #3f4337;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101209; --surface: #1a1c16; --ink: #eceee4; --ink-2: #c3c8b5; --muted: #8e9381;
+  --line: #2d3125; --line-strong: #4a4f40; --accent: #a9c35e; --accent-ink: #141a06; --accent-soft: #252d14;
+  --todo: #ff9186; --todo-soft: #3a1d1a;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --on-s1: #0b0b0b;
+  --grid: #2a2d24; --axis: #3f4337;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: calc(64px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15.5px; line-height: 1.72; -webkit-text-size-adjust: 100%; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 880px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+[hidden] { display: none !important; }
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2 { font-family: var(--f-display); font-weight: 700; text-wrap: balance; letter-spacing: -0.01em; }
+h3 { text-wrap: balance; }
+p { margin: 0 0 0.75em; }
+ul, ol { margin: 0 0 0.75em; padding-left: 1.3em; }
+.mono { font-family: var(--f-mono); }
+.muted { color: var(--muted); }
+.small { font-size: 0.88rem; }
+
+/* header */
+.top { padding-block: 28px 18px; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.top h1 { font-size: clamp(1.7rem, 4.6vw, 2.4rem); line-height: 1.25; margin: 6px 0 10px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--ink-2); font-size: 0.95rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+.dday { font-family: var(--f-mono); font-weight: 500; background: var(--accent); color: var(--accent-ink); padding: 4px 12px; border-radius: 6px; font-size: 1rem; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 3px 10px; font-size: 0.88rem; color: var(--ink-2); background: var(--surface); }
+.btn { font: inherit; font-size: 0.88rem; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* nav */
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-block: 8px; }
+.tabs .wrap::-webkit-scrollbar { display: none; }
+.tabs a { flex: none; text-decoration: none; color: var(--ink-2); font-size: 0.9rem; padding: 5px 11px; border-radius: 6px; white-space: nowrap; }
+.tabs a:hover { background: var(--accent-soft); }
+.tabs a[aria-current="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* sections */
+section.sec { padding-block: 36px 12px; }
+section.sec > .wrap > h2 { font-size: clamp(1.45rem, 3.6vw, 1.85rem); margin: 4px 0 6px; line-height: 1.3; }
+.lead { color: var(--ink-2); max-width: 65ch; }
+h4 { font-size: 0.95rem; margin: 18px 0 8px; }
+
+/* question / topic block */
+.q { border-top: 1px solid var(--line); padding-block: 24px 18px; }
+.q-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.q-head h3 { font-size: 1.12rem; line-height: 1.45; margin: 0; flex: 1 1 320px; min-width: 0; }
+.qid { font-family: var(--f-mono); font-size: 0.82rem; color: var(--muted); }
+.pri { font-size: 0.8rem; color: var(--accent); letter-spacing: 0.05em; }
+.intent { color: var(--muted); font-size: 0.9rem; margin: 6px 0 10px; }
+ol.bone { list-style: none; padding: 0; margin: 10px 0 12px; display: flex; flex-wrap: wrap; gap: 8px 6px; }
+ol.bone li { display: inline-flex; align-items: center; gap: 6px; }
+ol.bone li span { background: var(--accent-soft); border-radius: 6px; padding: 3px 10px; font-size: 0.92rem; }
+ol.bone li:not(:last-child)::after { content: "→"; color: var(--muted); }
+details.ans { margin: 10px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+details.ans > summary { cursor: pointer; padding: 9px 14px; font-weight: 600; font-size: 0.92rem; color: var(--ink-2); list-style: none; display: flex; align-items: center; gap: 8px; }
+details.ans > summary::-webkit-details-marker { display: none; }
+details.ans > summary::before { content: "▸"; color: var(--accent); transition: transform .15s; }
+details.ans[open] > summary::before { transform: rotate(90deg); }
+details.ans .say { padding: 4px 16px 10px; font-size: 1rem; line-height: 1.8; }
+.tails { margin-top: 12px; }
+.tails dt { font-weight: 600; margin-top: 10px; }
+.tails dd { margin: 2px 0 0; color: var(--ink-2); }
+ul.notes { color: var(--ink-2); font-size: 0.93rem; }
+mark.key { background: var(--accent-soft); color: var(--ink); padding: 1px 3px; border-radius: 3px; font-weight: 600; }
+.todo { color: var(--todo); background: var(--todo-soft); border-radius: 4px; padding: 0 4px; font-weight: 500; }
+blockquote.msg { margin: 14px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 1.06rem; line-height: 1.75; }
+.warn { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 8px; padding: 12px 14px; font-size: 0.93rem; }
+
+/* quiz mode: 블록 제목만 보이고 눌러야 열린다 */
+body[data-mode="quiz"] .q:not(.revealed) :is(ol.bone, details.ans, .tails, ul.notes, figure, .tiles, .seg-wrap, .warn, .calc, .inputs, .q-body) { display: none; }
+body[data-mode="quiz"] .q-head { cursor: pointer; }
+body[data-mode="quiz"] .q:not(.revealed) .q-head h3::after { content: "  · 눌러서 확인"; color: var(--muted); font-weight: 400; font-size: 0.82rem; }
+
+/* grids */
+.cols3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
+.cols3 > div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; min-width: 0; }
+.cols3 h4 { margin: 0 0 6px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 12px 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.tile .v { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+.tile .l { font-size: 0.84rem; color: var(--muted); margin-top: 4px; }
+
+/* tables */
+.tbl { overflow-x: auto; margin: 12px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: var(--surface); }
+th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.matrix td, table.matrix th { text-align: center; white-space: nowrap; }
+table.matrix td:first-child, table.matrix th:first-child { text-align: left; white-space: normal; min-width: 180px; }
+table.matrix .dot-main { color: var(--accent); font-size: 1.05rem; }
+table.matrix .dot-sub { color: var(--muted); }
+details.tv { margin: 6px 0 12px; font-size: 0.88rem; }
+details.tv summary { cursor: pointer; color: var(--muted); }
+
+/* figures */
+figure { margin: 16px 0; }
+.fig-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.fig-scroll svg { display: block; width: 100%; height: auto; }
+.w640 svg { min-width: 640px; }
+.w520 svg { min-width: 480px; }
+figcaption { font-size: 0.86rem; color: var(--muted); margin-top: 6px; }
+svg text { font-family: var(--f-body); }
+
+/* diagram (box-arrow) */
+.dg { color: var(--ink-2); }
+.dg .box { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+.dg .box.key { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+.dg .box.ghost { fill: none; stroke: var(--muted); stroke-dasharray: 4 4; }
+.dg text { fill: var(--ink); font-size: 12px; }
+.dg text.b { font-weight: 600; }
+.dg text.t2 { fill: var(--muted); font-size: 11px; }
+.dg text.el { fill: var(--ink-2); font-size: 11px; }
+.dg text.ttl { font-size: 13px; font-weight: 600; fill: var(--ink); }
+.dg .edge { fill: none; stroke: var(--ink-2); stroke-width: 1.4; }
+.dg .edge.dash { stroke: var(--muted); stroke-dasharray: 4 4; }
+.dg .edge.acc { stroke: var(--accent); stroke-width: 2; }
+.dg .ahp { fill: var(--ink-2); }
+.dg .ahp.acc { fill: var(--accent); }
+.dg .ahp.mut { fill: var(--muted); }
+.dg .sep { stroke: var(--line); }
+
+/* charts */
+.chart text { font-size: 11.5px; fill: var(--muted); }
+.chart text.val { fill: var(--ink); font-weight: 600; font-size: 12.5px; }
+.chart text.lbl { fill: var(--ink-2); }
+.chart text.in { fill: var(--on-s1); font-size: 11.5px; font-weight: 500; } /* f1 막대 안에서만 쓴다 */
+.chart .gl { stroke: var(--grid); stroke-width: 1; }
+.chart .base { stroke: var(--axis); stroke-width: 1; }
+.chart .ev { stroke: var(--accent); stroke-width: 1.5; }
+.chart text.evl { fill: var(--accent); font-size: 11.5px; font-weight: 600; }
+.f1 { fill: var(--s1); } .f2 { fill: var(--s2); } .f3 { fill: var(--s3); } .f4 { fill: var(--s4); } .f5 { fill: var(--s5); }
+.fm { fill: var(--muted); }
+.fsoft { fill: var(--grid); }
+.ln1 { stroke: var(--s1); stroke-width: 2; fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.area1 { fill: var(--s1); opacity: 0.1; }
+.ring { stroke: var(--surface); stroke-width: 2; }
+.dumb { stroke: var(--line-strong); stroke-width: 2; }
+.hit { fill: transparent; }
+.hit:focus { outline: none; }
+.hit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+.bars g:hover path, .bars g:focus-within path { opacity: 0.82; }
+.st-good { fill: var(--good); } .st-crit { fill: var(--crit); }
+
+/* segmented bar (renderSeg) */
+.seg-wrap { margin: 12px 0; }
+.seg { display: flex; gap: 2px; height: 28px; background: var(--surface); }
+.seg .part { border-radius: 4px; display: flex; align-items: center; padding: 0 8px; color: #0b0b0b; font-size: 12px; font-weight: 500; white-space: nowrap; min-width: 0; }
+.seg .part.c1 { color: var(--on-s1); }
+.c1 { background: var(--s1); } .c2 { background: var(--s2); } .c3 { background: var(--s3); } .c4 { background: var(--s4); } .c5 { background: var(--s5); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 0.86rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend i.dot { border-radius: 50%; }
+
+/* steps / flows */
+ol.steps { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; counter-reset: st; }
+ol.steps li { counter-increment: st; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+ol.steps li::before { content: counter(st); font-family: var(--f-mono); font-weight: 500; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 0.85rem; }
+ol.steps li > div { min-width: 0; }
+.flowrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
+.flowrow .st { border: 1px solid var(--line-strong); border-radius: 6px; padding: 4px 10px; font-size: 0.9rem; background: var(--surface); }
+.flowrow .st.hot { border-color: var(--crit); box-shadow: inset 0 0 0 1px var(--crit); font-weight: 600; }
+.flowrow .st.key { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.flowrow .arr { color: var(--muted); }
+.flowrow .rowlbl { width: 100%; font-size: 0.84rem; color: var(--muted); }
+
+/* schedule & checklist */
+.days { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 12px 0; }
+.day { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; }
+.day .dt { font-family: var(--f-mono); font-size: 0.85rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.day.today .dt::after { content: "오늘"; background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: 0 6px; font-family: var(--f-body); }
+.day.past { opacity: 0.6; }
+.check { list-style: none; padding: 0; margin: 6px 0 0; }
+.check li { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; }
+.check input { margin-top: 6px; accent-color: var(--accent); flex: none; }
+.check label { min-width: 0; }
+.check input:checked + label { color: var(--muted); text-decoration: line-through; }
+
+/* inputs & calculator */
+.inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 12px 0; }
+.inputs label { display: grid; gap: 4px; font-size: 0.86rem; color: var(--ink-2); min-width: 0; }
+.inputs input, .calc input, .calc textarea { font: inherit; font-size: 0.95rem; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--ink); width: 100%; }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin: 14px 0; }
+.calc .grid5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.calc .grid5 label { display: grid; gap: 4px; font-size: 0.84rem; color: var(--ink-2); min-width: 0; }
+.calc .grid5 label i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 4px; }
+.calc .verdict { font-weight: 600; margin-top: 8px; }
+.calc textarea { min-height: 64px; margin-top: 10px; }
+.tag-ex { display: inline-block; font-size: 0.78rem; border: 1px solid var(--todo); color: var(--todo); border-radius: 4px; padding: 0 6px; margin-left: 6px; }
+
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 6px 10px; font-size: 0.84rem; line-height: 1.4; max-width: 260px; display: grid; gap: 2px; }
+#tip strong { font-size: 0.95rem; }
+#tip span { opacity: 0.8; }
+
+footer { padding-block: 30px 50px; color: var(--muted); font-size: 0.85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 520px) { body { font-size: 15px; } .q-head h3 { flex-basis: 100%; } }
+</style>
+</head>
+<!--
+  data-store: localStorage 키 접두사(페이지마다 고유하게)
+  data-tz:    오늘 날짜를 계산할 시간대
+-->
+<body data-mode="study" data-store="page-key" data-tz="Asia/Seoul">
+
+<!-- data-deadline 형식
+     - 시각까지: "2026-12-01T14:40:00+09:00" (오프셋 필수) → D-day + 남은 시간
+     - 날짜만:   "2026-12-01" → data-tz 기준 날짜로 D-day만
+     비우면 D-day 칩이 숨는다 -->
+<header class="top" data-deadline="">
+  <div class="wrap">
+    <div class="eyebrow">맥락 한 줄 · 출처</div>
+    <h1>페이지 이름</h1>
+    <div class="meta"><span>날짜·대상</span><span>상황</span></div>
+    <div class="badges">
+      <span class="dday" id="dday" hidden>D-?</span>
+      <span class="chip" id="dday-sub" hidden></span>
+      <span class="chip" id="todo-chip"><span class="todo">✍️</span> 채울 곳 <b id="todo-count">0</b>개</span>
+      <button class="btn" id="btn-expand" type="button" aria-pressed="false">상세 모두 펼치기</button>
+      <!-- 기억이 목표가 아니면 아래 버튼을 지운다 -->
+      <button class="btn" id="btn-quiz" type="button" aria-pressed="false">암기 모드: 제목만 보기</button>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="섹션">
+  <div class="wrap">
+    <a href="#summary">한 장 요약</a>
+    <a href="#map">전체 지도</a>
+    <a href="#topic">주제</a>
+    <a href="#todo">할 일</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ===== 1. 한 장 요약 ===== -->
+<section class="sec" id="summary">
+  <div class="wrap">
+    <div class="eyebrow">여기서 멈춰도 요점은 가져간다</div>
+    <h2>한 장 요약</h2>
+    <blockquote class="msg">EXAMPLE: 한 줄 메시지.</blockquote>
+    <div class="cols3">
+      <div><h4>가져갈 것 1</h4>EXAMPLE</div>
+      <div><h4>가져갈 것 2</h4>EXAMPLE</div>
+      <div><h4>가져갈 것 3</h4>EXAMPLE</div>
+    </div>
+    <!-- EXAMPLE: 전체 중 비율 -->
+    <div class="seg-wrap" data-seg='{"unit":"분","parts":[{"n":"부분 A","v":12},{"n":"부분 B","v":18},{"n":"부분 C","v":10}]}'></div>
+  </div>
+</section>
+
+<!-- ===== 2. 전체 지도 ===== -->
+<section class="sec" id="map">
+  <div class="wrap">
+    <div class="eyebrow">이게 전체에서 어디쯤인가</div>
+    <h2>전체 지도</h2>
+    <p class="lead">EXAMPLE: 지도 그림이 보여 주는 것 한 문장.</p>
+    <!-- 타임라인·매트릭스·시스템 개요 중 하나. references/visual-forms.md 참고 -->
+  </div>
+</section>
+
+<!-- ===== 3. 주제 섹션 ===== -->
+<section class="sec" id="topic">
+  <div class="wrap">
+    <div class="eyebrow">§1 · 왜 이 순서인가</div>
+    <h2>주제 섹션</h2>
+
+    <article class="q" id="q1">
+      <div class="q-head"><span class="qid">§1-1</span><span class="pri">★★★</span><h3>EXAMPLE: 독자의 질문</h3></div>
+      <p class="intent">EXAMPLE: 이 블록이 답하는 것 / 질문 의도</p>
+      <ol class="bone"><li><span>뼈대 1</span></li><li><span>뼈대 2</span></li><li><span>뼈대 3</span></li></ol>
+      <div class="tiles">
+        <div class="tile"><div class="v">10% → 40%</div><div class="l">EXAMPLE 숫자 카드</div></div>
+      </div>
+      <details class="ans"><summary>상세</summary><div class="say">
+        <p>EXAMPLE: 상세 설명. <mark class="key">핵심 문장</mark>.</p>
+      </div></details>
+      <dl class="tails"><dt>EXAMPLE 꼬리질문</dt><dd>답</dd></dl>
+      <ul class="notes"><li>출처·메모 <span class="todo">✍️ EXAMPLE 채울 것</span></li></ul>
+    </article>
+
+    <!-- EXAMPLE 계산기: 독자가 실측값을 넣을 때만 남긴다. data-stages의 k는 영문 키, ex는 예시 값 -->
+    <article class="q" id="q-calc">
+      <div class="q-head"><span class="qid">§1-2</span><span class="pri">★★</span><h3>EXAMPLE: 실측해서 판단하기</h3></div>
+      <div class="calc" id="calc" data-unit="초" data-stages='[{"k":"a","n":"단계 A","ex":90},{"k":"b","n":"단계 B","ex":40},{"k":"c","n":"단계 C","ex":25}]'>
+        <b>EXAMPLE 계산기 제목</b><span class="tag-ex" id="calc-ex">예시 숫자</span>
+        <p class="small muted" style="margin:6px 0 10px">처음 값은 실측이 아닌 예시입니다.</p>
+        <div class="grid5" id="calc-inputs"></div>
+        <div class="seg-wrap" id="calc-seg"></div>
+        <p class="verdict" id="calc-verdict"></p>
+        <label for="calc-memo" class="small muted">관찰 메모</label>
+        <textarea id="calc-memo" data-key="calc-memo"></textarea>
+        <p><button class="btn" type="button" id="calc-reset">예시 값으로 되돌리기</button></p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ===== 4. 할 일 ===== -->
+<section class="sec" id="todo">
+  <div class="wrap">
+    <div class="eyebrow">무엇을 언제</div>
+    <h2>할 일</h2>
+    <div class="days">
+      <div class="day" data-from="2026-01-01" data-to="2026-01-01"><div class="dt">EXAMPLE 1/1</div><ul class="check">
+        <li><input type="checkbox" id="t1" data-key="t1"><label for="t1">EXAMPLE 할 일</label></li></ul></div>
+    </div>
+    <h4>남은 빈칸</h4>
+    <ul class="check">
+      <li><input type="checkbox" id="b1" data-key="b1"><label for="b1">EXAMPLE 빈칸 (<a href="#q1">§1-1</a>)</label></li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer><div class="wrap">출처와 기준일. 숫자 기준이 다르면 여기 밝힌다.</div></footer>
+
+<div id="tip" role="tooltip" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+  var body = document.body;
+  var PREFIX = (body.getAttribute("data-store") || "page") + ":";
+  var TZ = body.getAttribute("data-tz") || "Asia/Seoul";
+  var store = {
+    get: function (k) { try { return window.localStorage.getItem(PREFIX + k); } catch (e) { return null; } },
+    set: function (k, v) { try { window.localStorage.setItem(PREFIX + k, v); } catch (e) { /* storage unavailable */ } }
+  };
+  function localDate(d) {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d); }
+    catch (e) { return d.toISOString().slice(0, 10); }
+  }
+  var today = localDate(new Date());
+
+  /* D-day (header[data-deadline]): 시각+오프셋이면 남은 시간까지, 날짜만이면 data-tz 기준 날짜로 */
+  (function () {
+    var header = document.querySelector("header[data-deadline]");
+    var iso = header && header.getAttribute("data-deadline");
+    var el = document.getElementById("dday"), sub = document.getElementById("dday-sub");
+    if (!iso || !el || !sub) return;
+    // "2026-12-01"을 new Date()에 넣으면 UTC 자정이 되어 시간대에 따라 하루 어긋난다
+    var dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+    var target = new Date(iso);
+    if (isNaN(target)) return;
+    var targetDay = dateOnly ? iso : localDate(target);
+    el.hidden = false; sub.hidden = dateOnly;
+    function update() {
+      var now = new Date();
+      var tp = targetDay.split("-"), cp = localDate(now).split("-");
+      var days = Math.round((Date.UTC(+tp[0], +tp[1] - 1, +tp[2]) - Date.UTC(+cp[0], +cp[1] - 1, +cp[2])) / 86400000);
+      if (dateOnly ? days < 0 : target - now <= 0) { el.textContent = "완료"; sub.hidden = false; sub.textContent = "지난 일정"; return; }
+      el.textContent = days === 0 ? "D-DAY" : "D-" + days;
+      if (dateOnly) return;
+      var h = Math.floor((target - now) / 3600000);
+      sub.textContent = (Math.floor(h / 24) > 0 ? Math.floor(h / 24) + "일 " : "") + (h % 24) + "시간 남음";
+    }
+    update();
+    setInterval(update, 60000);
+  })();
+
+  /* schedule highlight */
+  document.querySelectorAll(".day").forEach(function (day) {
+    var from = day.getAttribute("data-from"), to = day.getAttribute("data-to");
+    if (!from || !to) return;
+    if (today >= from && today <= to) day.classList.add("today");
+    else if (today > to) day.classList.add("past");
+  });
+
+  /* persisted checkboxes and inputs */
+  document.querySelectorAll("[data-key]").forEach(function (el) {
+    var k = el.getAttribute("data-key"), v = store.get(k);
+    if (el.type === "checkbox") {
+      if (v !== null) el.checked = v === "1";
+      el.addEventListener("change", function () { store.set(k, el.checked ? "1" : "0"); });
+    } else {
+      if (v !== null) el.value = v;
+      el.addEventListener("input", function () { store.set(k, el.value); });
+    }
+  });
+
+  /* fill-in count (main only) */
+  var todoCount = document.querySelectorAll("main .todo").length;
+  var tc = document.getElementById("todo-count");
+  if (tc) tc.textContent = String(todoCount);
+  var chip = document.getElementById("todo-chip");
+  if (chip && todoCount === 0) chip.hidden = true;
+
+  /* expand all */
+  var btnExpand = document.getElementById("btn-expand");
+  if (btnExpand) btnExpand.addEventListener("click", function () {
+    var open = btnExpand.getAttribute("aria-pressed") !== "true";
+    document.querySelectorAll("details.ans").forEach(function (d) { d.open = open; });
+    btnExpand.setAttribute("aria-pressed", open ? "true" : "false");
+    btnExpand.textContent = open ? "상세 모두 접기" : "상세 모두 펼치기";
+  });
+
+  /* quiz mode */
+  var btnQuiz = document.getElementById("btn-quiz");
+  if (btnQuiz) {
+    btnQuiz.addEventListener("click", function () {
+      var on = body.getAttribute("data-mode") !== "quiz";
+      body.setAttribute("data-mode", on ? "quiz" : "study");
+      btnQuiz.setAttribute("aria-pressed", on ? "true" : "false");
+      document.querySelectorAll(".q.revealed").forEach(function (q) { q.classList.remove("revealed"); });
+    });
+    document.querySelectorAll(".q-head").forEach(function (h) {
+      h.setAttribute("tabindex", "0");
+      function toggle() { if (body.getAttribute("data-mode") === "quiz") h.parentElement.classList.toggle("revealed"); }
+      h.addEventListener("click", toggle);
+      h.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    });
+  }
+
+  /* tooltip: data-tip="값|설명" */
+  var tip = document.getElementById("tip");
+  function showTip(el, x, y) {
+    var raw = el.getAttribute("data-tip") || "", i = raw.indexOf("|");
+    var v = i >= 0 ? raw.slice(0, i) : raw, l = i >= 0 ? raw.slice(i + 1) : "";
+    tip.replaceChildren();
+    var s = document.createElement("strong"); s.textContent = v; tip.appendChild(s);
+    if (l) { var sp = document.createElement("span"); sp.textContent = l; tip.appendChild(sp); }
+    tip.hidden = false;
+    var left = Math.min(x + 14, window.innerWidth - tip.offsetWidth - 8);
+    var top = y - tip.offsetHeight - 12; if (top < 8) top = y + 18;
+    tip.style.left = Math.max(8, left) + "px"; tip.style.top = top + "px";
+  }
+  function hideTip() { tip.hidden = true; }
+  document.addEventListener("pointermove", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (t) showTip(t, e.clientX, e.clientY); else if (!tip.hidden) hideTip();
+  });
+  document.addEventListener("focusin", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (t) { var r = t.getBoundingClientRect(); showTip(t, r.left + r.width / 2, r.top); }
+  });
+  document.addEventListener("focusout", hideTip);
+  window.addEventListener("scroll", hideTip, { passive: true });
+
+  /* segmented bar: [data-seg] JSON {unit, parts:[{n, v}]} */
+  var COLORS = ["c1", "c2", "c3", "c4", "c5"];
+  function renderSeg(host, data) {
+    host.replaceChildren();
+    var total = data.parts.reduce(function (a, p) { return a + (p.v > 0 ? p.v : 0); }, 0);
+    if (!total) { var empty = document.createElement("p"); empty.className = "small muted"; empty.textContent = "값을 입력하면 막대가 그려집니다."; host.appendChild(empty); return; }
+    var bar = document.createElement("div"); bar.className = "seg"; bar.setAttribute("role", "img");
+    var aria = [];
+    data.parts.forEach(function (p, idx) {
+      if (!(p.v > 0)) return;
+      var share = Math.round(p.v / total * 100);
+      var part = document.createElement("div");
+      part.className = "part " + COLORS[idx % COLORS.length];
+      part.style.flex = p.v + " 1 0";
+      part.setAttribute("tabindex", "0");
+      part.setAttribute("data-tip", p.v + data.unit + " · " + share + "%|" + p.n);
+      var lab = document.createElement("span"); lab.textContent = share + "%"; part.appendChild(lab);
+      bar.appendChild(part);
+      aria.push(p.n + " " + p.v + data.unit + " (" + share + "%)");
+    });
+    bar.setAttribute("aria-label", aria.join(", "));
+    host.appendChild(bar);
+    var lg = document.createElement("div"); lg.className = "legend";
+    data.parts.forEach(function (p, idx) {
+      var s = document.createElement("span"), i = document.createElement("i");
+      i.className = COLORS[idx % COLORS.length]; s.appendChild(i); s.appendChild(document.createTextNode(p.n)); lg.appendChild(s);
+    });
+    host.appendChild(lg);
+    var det = document.createElement("details"); det.className = "tv";
+    var sm = document.createElement("summary"); sm.textContent = "표로 보기"; det.appendChild(sm);
+    var tw = document.createElement("div"); tw.className = "tbl";
+    var tb = document.createElement("table"), thead = document.createElement("thead"), hr = document.createElement("tr");
+    ["항목", "값", "비중"].forEach(function (h, k) { var th = document.createElement("th"); th.textContent = h; if (k) th.className = "num"; hr.appendChild(th); });
+    thead.appendChild(hr); tb.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    data.parts.forEach(function (p) {
+      var tr = document.createElement("tr");
+      [p.n, p.v + data.unit, Math.round((p.v > 0 ? p.v : 0) / total * 100) + "%"].forEach(function (c, k) {
+        var td = document.createElement("td"); td.textContent = c; if (k) td.className = "num"; tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    tb.appendChild(tbody); tw.appendChild(tb); det.appendChild(tw); host.appendChild(det);
+    fitLabels(bar);
+  }
+  function fitLabels(bar) {
+    requestAnimationFrame(function () {
+      bar.querySelectorAll(".part").forEach(function (part) {
+        var lab = part.firstChild; if (!lab) return;
+        lab.style.visibility = "visible";
+        if (lab.offsetWidth + 16 > part.clientWidth) lab.style.visibility = "hidden";
+      });
+    });
+  }
+  document.querySelectorAll("[data-seg]").forEach(function (host) {
+    try { renderSeg(host, JSON.parse(host.getAttribute("data-seg"))); } catch (e) { /* bad data-seg JSON */ }
+  });
+  window.addEventListener("resize", function () { document.querySelectorAll(".seg").forEach(fitLabels); });
+
+  /* calculator: #calc[data-stages][data-unit] */
+  (function () {
+    var calc = document.getElementById("calc");
+    if (!calc) return;
+    var stages, unit = calc.getAttribute("data-unit") || "";
+    try { stages = JSON.parse(calc.getAttribute("data-stages") || "[]"); } catch (e) { return; }
+    var wrap = document.getElementById("calc-inputs"), seg = document.getElementById("calc-seg");
+    var verdict = document.getElementById("calc-verdict"), exTag = document.getElementById("calc-ex");
+    var inputs = {};
+    stages.forEach(function (s, idx) {
+      var lab = document.createElement("label"); lab.setAttribute("for", "calc-" + s.k);
+      var name = document.createElement("span"), sw = document.createElement("i");
+      sw.className = COLORS[idx % COLORS.length]; name.appendChild(sw); name.appendChild(document.createTextNode(s.n + (unit ? " (" + unit + ")" : "")));
+      var inp = document.createElement("input"); inp.type = "number"; inp.min = "0"; inp.step = "any"; inp.inputMode = "decimal"; inp.id = "calc-" + s.k;
+      var saved = store.get("calc-" + s.k); inp.value = saved !== null ? saved : String(s.ex);
+      inp.addEventListener("input", function () { store.set("calc-" + s.k, inp.value); store.set("calc-edited", "1"); render(); });
+      lab.appendChild(name); lab.appendChild(inp); wrap.appendChild(lab); inputs[s.k] = inp;
+    });
+    function render() {
+      var parts = stages.map(function (s) { var v = parseFloat(inputs[s.k].value); return { n: s.n, v: isFinite(v) && v > 0 ? v : 0 }; });
+      renderSeg(seg, { unit: unit, parts: parts });
+      var total = parts.reduce(function (a, p) { return a + p.v; }, 0);
+      exTag.hidden = store.get("calc-edited") === "1";
+      if (!total) { verdict.textContent = ""; return; }
+      var max = parts.reduce(function (a, p) { return p.v > a.v ? p : a; }, parts[0]);
+      verdict.textContent = "합계 " + Math.round(total) + unit + " · 가장 큰 단계: " + max.n + " (" + Math.round(max.v / total * 100) + "%)" + (exTag.hidden ? "" : " · 예시 숫자 기준");
+    }
+    var reset = document.getElementById("calc-reset");
+    if (reset) reset.addEventListener("click", function () {
+      stages.forEach(function (s) { inputs[s.k].value = String(s.ex); store.set("calc-" + s.k, String(s.ex)); });
+      store.set("calc-edited", "0"); render();
+    });
+    render();
+  })();
+
+  /* active section tab */
+  var links = {};
+  document.querySelectorAll(".tabs a").forEach(function (a) { links[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        Object.keys(links).forEach(function (k) { links[k].removeAttribute("aria-current"); });
+        var a = links[en.target.id];
+        if (!a) return;
+        a.setAttribute("aria-current", "true");
+        var bar = a.parentElement;
+        if (a.offsetLeft < bar.scrollLeft || a.offsetLeft + a.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = Math.max(0, a.offsetLeft - 16);
+      });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    document.querySelectorAll("section.sec").forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>
